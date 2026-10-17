@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Humaine</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#182033;--muted:#6b7280;--primary:#635bff;--border:#e5e7eb;--soft:#eeedff;--green:#16865b;--badge-ih:#8b5cf6;--red:#e53e3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:linear-gradient(135deg,#554cf2,#897bff);color:white;padding:22px 18px 26px;border-radius:0 0 26px 26px}
+.top{max-width:850px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{display:grid;place-items:center;background:#ffffff25;width:48px;height:48px;border-radius:15px;font-size:25px}
+h1{font-size:23px;margin:0} header p{margin:5px 0 0;color:#eeeaff;font-size:14px}
+main{max-width:850px;margin:20px auto;padding:0 14px 35px}
+.tabs{display:flex;gap:8px;margin-bottom:18px}
+.tab{border:1px solid var(--border);background:var(--card);color:var(--muted);padding:11px 14px;border-radius:13px;cursor:pointer;font-weight:650;flex:1}
+.tab.active{background:var(--soft);color:var(--primary);border-color:#d8d5ff}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 4px 16px #1f2a4410}
+h2{font-size:19px;margin:0 0 7px} .hint{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 15px}
+label{font-weight:650;display:block;margin:13px 0 7px;font-size:14px}
+input,select,textarea{width:100%;padding:12px 13px;border:1px solid #d8dce6;border-radius:12px;font:inherit;background:white;color:var(--text);outline-color:var(--primary)}
+textarea{min-height:105px;resize:vertical}
+button.primary{width:100%;border:0;background:var(--primary);color:white;padding:13px 15px;border-radius:12px;font:inherit;font-weight:750;cursor:pointer;margin-top:12px}
+button.primary:disabled{opacity:0.6;cursor:not-allowed}
+button.secondary{border:1px solid var(--border);background:white;color:var(--text);padding:9px 12px;border-radius:10px;cursor:pointer}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.badge{display:inline-block;background:#e9f8f0;color:var(--green);font-size:12px;font-weight:750;padding:5px 9px;border-radius:99px}
+.badge-status{display:inline-block;background:#f3e8ff;color:var(--badge-ih);font-size:12px;font-weight:750;padding:4px 10px;border-radius:99px;margin-left:8px}
+.question{font-weight:750;font-size:17px;line-height:1.45;white-space:pre-wrap}
+.answer{white-space:pre-wrap;line-height:1.55;margin-top:9px}
+.order{border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:11px}
+.order-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.small{font-size:13px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:25px 8px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+
+.user-bar{display:flex;align-items:center;justify-content:space-between;background:var(--soft);border:1px solid #d8d5ff;padding:12px 16px;border-radius:14px;margin-bottom:18px}
+.user-greeting{font-weight:700;color:var(--primary);display:flex;align-items:center}
+
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal{background:white;border-radius:18px;padding:24px;width:90%;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
+.modal-toggle{text-align:center;margin-top:12px;font-size:14px;color:var(--primary);cursor:pointer;text-decoration:underline}
+.auth-error{color:var(--red);font-size:13px;margin-top:10px;text-align:center;display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="header-left">
+      <div class="logo">🧠</div>
+      <div>
+        <h1>IA Humaine</h1>
+        <p>Une question, une réponse, une vraie personne.</p>
+      </div>
+    </div>
+    <div id="authBtnContainer">
+      <button class="secondary" id="openAuthBtn" type="button">Se connecter</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="user-bar" id="userBar" style="display:none;">
+    <div class="user-greeting">
+      <span id="greetingText">Bonjour !</span>
+      <span class="badge-status" id="userStatusBadge">Statut : Membre</span>
+    </div>
+    <button class="secondary" id="logoutBtn" type="button" style="padding:6px 12px;font-size:13px;">Déconnexion</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="poser" type="button">✨ Poser une question</button>
+    <button class="tab" data-tab="repondre" type="button">💬 Répondre</button>
+    <button class="tab" data-tab="mes" type="button">📋 Mes questions</button>
+  </div>
+
+  <section id="poser" class="panel active">
+    <div class="card">
+      <h2>Tu cherches une réponse ?</h2>
+      <p class="hint">Pose ta question à la communauté. Une seule réponse sera retenue : la première réponse valide gagne le crédit, puis la question disparaît de la liste.</p>
+      
+      <label for="categorie">Catégorie</label>
+      <select id="categorie">
+        <option value="">Choisir une catégorie…</option>
+        <option>Informatique</option>
+        <option>École</option>
+        <option>Vie quotidienne</option>
+        <option>Culture générale</option>
+        <option>Loisirs</option>
+        <option>Autre</option>
+      </select>
+      
+      <label for="question">Ta question</label>
+      <textarea id="question" maxlength="1000" placeholder="Explique clairement ce que tu veux savoir…"></textarea>
+      
+      <div class="row">
+        <span class="small">Minimum : 20 caractères</span>
+        <span class="small" id="compteur" style="text-align:right">0 / 1000</span>
+      </div>
+      
+      <button class="primary" id="publier" type="button">Publier la question</button>
+    </div>
+  </section>
+
+  <section id="repondre" class="panel">
+    <div class="card">
+      <h2>Questions en attente</h2>
+      <p class="hint">Choisis une question et propose une réponse d'au moins 20 caractères.</p>
+      <div id="listeQuestions"><div class="empty">Chargement des questions…</div></div>
+    </div>
+  </section>
+
+  <section id="mes" class="panel">
+    <div class="card">
+      <h2>Toutes les questions & réponses</h2>
+      <p class="hint">Retrouve l'ensemble des échanges en direct.</p>
+      <div id="mesQuestions"><div class="empty">Chargement…</div></div>
+    </div>
+  </section>
+
+  <footer>IA Humaine · Les réponses sont proposées par des personnes, pas par une IA.</footer>
+</main>
+
+<!-- Modal Authentification -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <h2 id="modalTitle">Connexion</h2>
+    
+    <div id="pseudoField" style="display:none;">
+      <label for="authPseudo">Pseudo</label>
+      <input type="text" id="authPseudo" placeholder="Ton pseudo…">
+    </div>
+
+    <label for="authEmail">Email</label>
+    <input type="email" id="authEmail" placeholder="exemple@email.com">
+
+    <label for="authPassword">Mot de passe</label>
+    <input type="password" id="authPassword" placeholder="••••••••">
+
+    <div class="auth-error" id="authErrorMsg"></div>
+
+    <button class="primary" id="authSubmitBtn" type="button">Se connecter</button>
+    <div class="modal-toggle" id="toggleAuthMode">Pas encore de compte ? S'inscrire</div>
+    <button class="secondary" id="closeAuthBtn" type="button" style="width:100%;margin-top:8px;">Fermer</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    updateDoc, 
+    doc, 
+    getDoc,
+    setDoc,
+    onSnapshot, 
+    query, 
+    orderBy, 
+    serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCXyenVe-uKI7NE_yFeAp_0Kwd7qWUpmmc",
+    authDomain: "ia-humaine.firebaseapp.com",
+    databaseURL: "https://ia-humaine-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ia-humaine",
+    storageBucket: "ia-humaine.firebasestorage.app",
+    messagingSenderId: "780290965748",
+    appId: "1:780290965748:web:a41ef3049cabae6d465ea1",
+    measurementId: "G-NG2TVPMDV7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  const $ = id => document.getElementById(id);
+  function esc(s){ return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  let currentUserData = null;
+  let isSignupMode = false;
+  let questionsData = [];
+
+  function showError(msg) {
+    const errBox = $('authErrorMsg');
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+  }
+
+  function clearError() {
+    const errBox = $('authErrorMsg');
+    errBox.textContent = '';
+    errBox.style.display = 'none';
+  }
+
+  $('openAuthBtn').addEventListener('click', () => {
+    isSignupMode = false;
+    clearError();
+    $('modalTitle').textContent = "Connexion";
+    $('authSubmitBtn').textContent = "Se connecter";
+    $('pseudoField').style.display = "none";
+    $('toggleAuthMode').textContent = "Pas encore de compte ? S'inscrire";
+    $('authModal').classList.add('active');
+  });
+
+  $('closeAuthBtn').addEventListener('click', () =>$('authModal').classList.remove('active'));
+
+  $('toggleAuthMode').addEventListener('click', () => {
+    isSignupMode = !isSignupMode;
+    clearError();
+    $('modalTitle').textContent = isSignupMode ? "Inscription" : "Connexion";
+    $('authSubmitBtn').textContent = isSignupMode ? "Créer mon compte" : "Se connecter";
+    $('pseudoField').style.display = isSignupMode ? "block" : "none";
+    $('toggleAuthMode').textContent = isSignupMode ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? S'inscrire";
+  });
+
+  $('authSubmitBtn').addEventListener('click', async () => {
+    clearError();
+    const email = $('authEmail').value.trim();
+    const password = $('authPassword').value.trim();
+    const pseudo = $('authPseudo').value.trim();
+
+    if (!email || !password) { 
+      showError('Merci de remplir l\'email et le mot de passe.'); 
+      return; 
+    }
+
+    const submitBtn = $('authSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = isSignupMode ? "Création du compte..." : "Connexion en cours...";
+
+    try {
+      if (isSignupMode) {
+        if (!pseudo) { 
+          showError('Merci de choisir un pseudo.'); 
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Créer mon compte";
+          return; 
+        }
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        
+        await setDoc(doc(db, "users", userCred.user.uid), {
+          pseudo: pseudo,
+          email: email,
+          role: "user",
+          statusLabel: "Demandeur",
+          createdAt: serverTimestamp()
+        });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+
+      $('authModal').classList.remove('active');$('authEmail').value = '';
+      $('authPassword').value = '';$('authPseudo').value = '';
+
+    } catch (e) {
+      console.error("Erreur Auth :", e);
+      if (e.code === 'auth/email-already-in-use') {
+        showError("Cet email est déjà utilisé ! Cliquez sur 'Se connecter'.");
+      } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
+        showError("Email ou mot de passe incorrect.");
+      } else if (e.code === 'auth/weak-password') {
+        showError("Le mot de passe doit faire au moins 6 caractères.");
+      } else if (e.code === 'auth/unauthorized-domain') {
+        showError("Ce domaine Netlify n'est pas autorisé dans Firebase Console (Authentication > Paramètres > Domaines autorisés).");
+      } else {
+        showError("Erreur : " + e.message);
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isSignupMode ? "Créer mon compte" : "Se connecter";
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          currentUserData = userDoc.data();
+        } else {
+          currentUserData = { pseudo: user.email ? user.email.split('@')[0] : "Membre", statusLabel: "Demandeur" };
+        }
+      } catch (e) {
+        console.error("Erreur récup profil :", e);
+        currentUserData = { pseudo: user.email ? user.email.split('@')[0] : "Membre", statusLabel: "Demandeur" };
+      }
+
+      const hour = new Date().getHours();
+      const salutation = (hour >= 18 || hour < 5) ? "Bonsoir" : "Bonjour";
+      $('greetingText').textContent = `${salutation} ${currentUserData.pseudo || 'à toi'} !`;
+      $('userStatusBadge').textContent = `Statut : ${currentUserData.statusLabel || 'Demandeur'}`;
+
+      $('userBar').style.display = "flex";
+      $('openAuthBtn').style.display = "none";
+    } else {
+      currentUserData = null;
+      $('userBar').style.display = "none";
+      $('openAuthBtn').style.display = "block";
+    }
+  });
+
+  window.sendAnswer = async function(id) {
+    const box = $('a' + id);
+    if (!box) return;
+    const answerText = box.value.trim();
+
+    if (answerText.length < 20) {
+      alert('La réponse doit contenir au moins 20 caractères.');
+      return;
+    }
+
+    try {
+      const qRef = doc(db, "questions", id);
+      await updateDoc(qRef, {
+        status: "answered",
+        answer: {
+          text: answerText,
+          authorPseudo: currentUserData ? currentUserData.pseudo : "Anonyme",
+          createdAt: new Date().toISOString()
+        }
+      });
+      alert('Réponse envoyée avec succès !');
+    } catch (e) {
+      console.error("Erreur envoi réponse :", e);
+      alert("Erreur lors de l'enregistrement de la réponse.");
+    }
+  };
+
+  document.querySelectorAll('.tab').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tab, .panel').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const targetPanel = $(b.dataset.tab);
+      if (targetPanel) targetPanel.classList.add('active');
+    });
+  });
+
+  $('question').addEventListener('input', () => {
+    $('compteur').textContent =$('question').value.length + ' / 1000';
+  });
+
+  $('publier').addEventListener('click', async () => {
+    const category = $('categorie').value;
+    const questionText = $('question').value.trim();
+
+    if (!category) { alert('Choisis une catégorie.'); return; }
+    if (questionText.length < 20) { alert('Ta question doit contenir au moins 20 caractères.'); return; }
+
+    try {
+      await addDoc(collection(db, "questions"), {
+        category: category,
+        question: questionText,
+        authorPseudo: currentUserData ? currentUserData.pseudo : "Anonyme",
+        createdAt: serverTimestamp(),
+        status: "waiting",
+        answer: null
+      });
+
+      $('question').value = '';
+      $('compteur').textContent = '0 / 1000';$('categorie').value = '';
+      document.querySelector('[data-tab="repondre"]').click();
+    } catch (e) {
+      console.error("Erreur publication :", e);
+      alert("Erreur lors de la publication.");
+    }
+  });
+
+  const qQuery = query(collection(db, "questions"), orderBy("createdAt", "desc"));
+  onSnapshot(qQuery, (snapshot) => {
+    questionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render();
+  });
+
+  function render() {
+    const pending = questionsData.filter(q => q.status === "waiting");
+    const answered = questionsData.filter(q => q.status === "answered");
+
+    $('listeQuestions').innerHTML = pending.length ? pending.map(q => `
+      <div class="order">
+        <div class="order-head">
+          <span class="badge">${esc(q.category)}</span>
+          <span class="small">Par ${esc(q.authorPseudo || 'Anonyme')}</span>
+        </div>
+        <div class="question" style="margin-top:12px">${esc(q.question)}</div>
+        <label for="a${q.id}">Ta réponse</label>
+        <textarea id="a${q.id}" maxlength="1000" placeholder="Écris une réponse utile…"></textarea>
+        <button class="primary" onclick="window.sendAnswer('${q.id}')" type="button">Envoyer ma réponse</button>
+      </div>
+    `).join('') : '<div class="empty">🎉 Aucune question en attente.</div>';
+
+    $('mesQuestions').innerHTML = answered.length ? answered.map(q => `
+      <div class="order">
+        <div class="order-head">
+          <span class="badge">${esc(q.category)}</span>
+          <span class="small">Répondu par ${esc(q.answer ? q.answer.authorPseudo : 'IH')}</span>
+        </div>
+        <div class="question" style="margin-top:10px">${esc(q.question)}</div>
+        <div class="answer"><strong>Réponse :</strong> ${esc(q.answer ? q.answer.text : '')}</div>
+      </div>
+    `).join('') : '<div class="empty">Aucune question répondue pour le moment.</div>';
+  }
+</script>
+</body>
+</html>
